@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "migrate": "node --env-file=.env scripts/migrate.mjs",
-    "seed": "node --env-file=.env scripts/seed.mjs"
+    "seed": "node --env-file=.env scripts/seed.mjs",
+    "dev": "node --env-file=.env scripts/dev.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
