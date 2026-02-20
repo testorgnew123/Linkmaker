@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg: #080c14; --surface: #0f1624; --surface2: #161e30; --surface3: #1c2640;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --accent: #6c63ff; --accent2: #ff6b6b; --accent3: #43e97b;
+  --text: #e8eaf2; --text2: #8892a4; --text3: #4e5a6e; --white: #ffffff;
+  --radius: 18px; --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--screen-bg, var(--bg));
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Skeleton loader */
+.skeleton { display: flex; flex-direction: column; align-items: center; padding: 80px 24px; gap: 16px; }
+.skeleton-circle { width: 88px; height: 88px; border-radius: 50%; background: var(--surface2); animation: shimmer 1.5s infinite; }
+.skeleton-line { height: 16px; border-radius: 8px; background: var(--surface2); animation: shimmer 1.5s infinite; }
+.skeleton-line.w60 { width: 60%; }
+.skeleton-line.w40 { width: 40%; }
+.skeleton-line.w80 { width: 80%; }
+.skeleton-card { width: 90%; height: 60px; border-radius: var(--radius); background: var(--surface2); animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+
+/* 404 */
+.not-found { display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:16px;padding:24px;text-align:center; }
+.not-found h1 { font-family:'Syne',sans-serif; font-size:48px; font-weight:800; color:var(--white); }
+.not-found p { font-size:16px; color:var(--text2); max-width:400px; }
+.not-found a { color:var(--accent); text-decoration:none; font-weight:600; }
+
+/* Profile styles (same as editor preview) */
+.profile-page { min-height:100%; position:relative; padding-bottom:40px; max-width:500px; margin:0 auto; }
+
+.profile-hero { position:relative; padding:52px 24px 36px; text-align:center; overflow:hidden; }
+.profile-hero-bg { position:absolute; inset:0; z-index:0; background:var(--hero-bg, linear-gradient(160deg,#0f1020,#0d1520)); }
+.profile-hero-mesh { position:absolute; inset:0; z-index:0; opacity:0.5; background-image:radial-gradient(ellipse 70% 50% at 50% -10%,var(--hero-glow,rgba(108,99,255,0.35)) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 80% 80%,var(--hero-glow2,rgba(108,99,255,0.2)) 0%,transparent 60%); }
+.profile-hero > * { position:relative; z-index:1; }
+
+.avatar-ring { display:inline-flex; position:relative; margin-bottom:20px; }
+.avatar-ring::before { content:''; position:absolute; inset:-3px; border-radius:50%; background:conic-gradient(var(--accent-color,var(--accent)),var(--accent-color2,#ff6b6b),var(--accent-color,var(--accent))); animation:spin 6s linear infinite; z-index:0; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.avatar-wrap { width:88px; height:88px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; position:relative; z-index:1; overflow:hidden; font-family:'Syne',sans-serif; font-size:32px; font-weight:800; color:var(--accent-color,var(--accent)); border:3px solid var(--bg); }
+.avatar-img { width:100%; height:100%; object-fit:cover; }
+
+.profile-name { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; color:var(--white); letter-spacing:-0.5px; margin-bottom:4px; line-height:1.2; }
+.profile-tagline { font-size:13px; font-weight:400; color:rgba(255,255,255,0.55); letter-spacing:0.5px; margin-bottom:14px; }
+.profile-bio { font-size:13px; color:rgba(255,255,255,0.45); line-height:1.65; max-width:280px; margin:0 auto 20px; }
+
+.verified-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:4px 10px; font-size:11px; color:rgba(255,255,255,0.5); margin-bottom:20px; backdrop-filter:blur(8px); }
+.verified-badge svg { color:var(--accent-color,var(--accent)); }
+
+.social-strip { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:0 24px; margin-bottom:32px; }
+.social-pill { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:50px; padding:8px 14px; cursor:pointer; text-decoration:none; transition:var(--transition); animation:fadeSlideUp 0.5s ease both; backdrop-filter:blur(8px); }
+.social-pill:hover { background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); transform:translateY(-2px); }
+.social-pill-icon { width:18px; height:18px; flex-shrink:0; }
+.social-pill-label { font-size:12px; font-weight:500; color:rgba(255,255,255,0.7); }
+
+.cards-container { padding:0 16px; display:flex; flex-direction:column; gap:12px; }
+
+.qr-card { border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.07); position:relative; animation:fadeSlideUp 0.5s ease both; transition:var(--transition); }
+.qr-card:hover { border-color:rgba(255,255,255,0.14); transform:translateY(-2px); box-shadow:0 12px 40px rgba(0,0,0,0.4); }
+
+.card-link { display:flex; align-items:center; gap:14px; padding:16px 18px; text-decoration:none; background:rgba(255,255,255,0.04); backdrop-filter:blur(12px); }
+.card-link-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:20px; }
+.card-link-content { flex:1; min-width:0; }
+.card-link-title { font-size:15px; font-weight:600; color:var(--white); margin-bottom:2px; }
+.card-link-sub { font-size:12px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-link-arrow { color:var(--text3); flex-shrink:0; transition:var(--transition); }
+.card-link:hover .card-link-arrow { transform:translateX(4px); color:var(--accent-color,var(--accent)); }
+
+.card-expand-btn { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; cursor:pointer; background:rgba(255,255,255,0.04); backdrop-filter:blur(12px); border:none; width:100%; text-align:left; transition:var(--transition); gap:14px; color:var(--text); font-family:'Outfit',sans-serif; }
+.card-expand-btn:hover { background:rgba(255,255,255,0.07); }
+.card-expand-btn .card-link-icon { font-size:20px; }
+.card-expand-label { flex:1; }
+.card-expand-title { font-size:15px; font-weight:600; color:var(--white); margin-bottom:2px; }
+.card-expand-sub { font-size:12px; color:var(--text2); }
+.card-expand-chevron { color:var(--text3); transition:var(--transition); flex-shrink:0; }
+.card-expand-btn.expanded .card-expand-chevron { transform:rotate(180deg); color:var(--accent-color,var(--accent)); }
+
+.card-embed-area { display:none; border-top:1px solid rgba(255,255,255,0.06); }
+.card-embed-area.open { display:block; }
+.card-embed-area iframe { width:100%; display:block; border:none; }
+.map-embed-frame { height:200px; filter:grayscale(0.3) contrast(1.05); }
+
+.website-preview-bar { display:flex; align-items:center; gap:8px; padding:8px 14px; background:rgba(255,255,255,0.03); border-top:1px solid rgba(255,255,255,0.06); }
+.browser-dots2 { display:flex; gap:4px; }
+.browser-dot2 { width:7px; height:7px; border-radius:50%; }
+.url-bar { flex:1; background:rgba(255,255,255,0.06); border-radius:6px; padding:3px 10px; font-size:10px; color:var(--text3); font-family:monospace; }
+.website-preview-placeholder { width:100%; height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(255,107,107,0.1)); font-family:'Syne',sans-serif; }
+.website-preview-placeholder .site-name { font-size:18px; font-weight:700; color:rgba(255,255,255,0.6); }
+.website-preview-placeholder .site-url { font-size:11px; color:rgba(255,255,255,0.3); font-family:monospace; }
+
+.gbiz-inner { padding:18px 18px 6px; background:rgba(255,255,255,0.04); }
+.gbiz-brand-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.gbiz-g-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.3); flex-shrink:0; }
+.gbiz-g-icon svg { width:24px; height:24px; }
+.gbiz-biz-name { font-size:15px; font-weight:700; color:var(--white); }
+.gbiz-biz-cat { font-size:11px; color:var(--text2); }
+.stars2 { display:flex; gap:2px; margin-bottom:4px; }
+.star2 { color:#f5c518; font-size:14px; }
+.gbiz-stats-row { display:flex; gap:16px; margin-bottom:14px; }
+.gbiz-stat { text-align:center; }
+.gbiz-stat-val { font-size:18px; font-weight:700; color:var(--white); }
+.gbiz-stat-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; }
+.gbiz-divider { width:1px; background:var(--border); }
+.gbiz-actions { display:flex; gap:8px; padding:12px 18px; border-top:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); }
+.gbiz-action-btn { flex:1; padding:9px; border-radius:10px; border:none; cursor:pointer; font-size:12px; font-weight:600; font-family:'Outfit',sans-serif; transition:var(--transition); }
+.gbiz-action-primary { background:var(--accent-color,var(--accent)); color:white; }
+.gbiz-action-secondary { background:rgba(255,255,255,0.07); color:var(--text); }
+.gbiz-action-btn:hover { opacity:0.85; transform:translateY(-1px); }
+
+.cta-card { padding:20px 18px; background:linear-gradient(135deg,var(--cta-from,rgba(108,99,255,0.2)),var(--cta-to,rgba(255,107,107,0.15))); position:relative; overflow:hidden; backdrop-filter:blur(12px); }
+.cta-card::before { content:''; position:absolute; inset:0; background:var(--cta-shine,radial-gradient(ellipse 80% 60% at 0% 0%,rgba(255,255,255,0.05) 0%,transparent 60%)); }
+.cta-card > * { position:relative; z-index:1; }
+.cta-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:4px 10px; font-size:10px; font-weight:700; color:rgba(255,255,255,0.8); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+.cta-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--white); margin-bottom:6px; line-height:1.2; }
+.cta-desc { font-size:12px; color:rgba(255,255,255,0.55); line-height:1.6; margin-bottom:16px; }
+.cta-action { display:inline-flex; align-items:center; gap:8px; background:var(--white); color:var(--bg); border-radius:10px; padding:10px 18px; font-size:13px; font-weight:700; text-decoration:none; transition:var(--transition); border:none; cursor:pointer; font-family:'Outfit',sans-serif; }
+.cta-action:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+
+.profile-footer { text-align:center; padding:32px 24px 20px; position:relative; z-index:1; }
+.powered-by { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text3); text-decoration:none; transition:var(--transition); }
+.powered-by:hover { color:var(--text2); }
+.powered-by-logo { font-family:'Syne',sans-serif; font-weight:700; }
+.powered-by-logo span { color:var(--accent); }
+
+@keyframes fadeSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.qr-card:nth-child(1){animation-delay:0.1s} .qr-card:nth-child(2){animation-delay:0.15s} .qr-card:nth-child(3){animation-delay:0.2s}
+.qr-card:nth-child(4){animation-delay:0.25s} .qr-card:nth-child(5){animation-delay:0.3s} .qr-card:nth-child(6){animation-delay:0.35s}
+.social-pill:nth-child(1){animation-delay:0.05s} .social-pill:nth-child(2){animation-delay:0.1s} .social-pill:nth-child(3){animation-delay:0.15s}
+.social-pill:nth-child(4){animation-delay:0.2s} .social-pill:nth-child(5){animation-delay:0.25s}
+
+/* Themes */
+.theme-midnight{--screen-bg:#080c14;--hero-bg:linear-gradient(160deg,#0f1020,#0d1520);--hero-glow:rgba(108,99,255,0.35);--hero-glow2:rgba(108,99,255,0.2);--accent-color:#6c63ff;--accent-color2:#ff6b6b;--cta-from:rgba(108,99,255,0.2);--cta-to:rgba(255,107,107,0.15)}
+.theme-emerald{--screen-bg:#050d0a;--hero-bg:linear-gradient(160deg,#051209,#061510);--hero-glow:rgba(16,185,129,0.4);--hero-glow2:rgba(67,233,123,0.2);--accent-color:#10b981;--accent-color2:#43e97b;--cta-from:rgba(16,185,129,0.2);--cta-to:rgba(67,233,123,0.1)}
+.theme-crimson{--screen-bg:#0d0507;--hero-bg:linear-gradient(160deg,#150508,#1a0808);--hero-glow:rgba(239,68,68,0.4);--hero-glow2:rgba(251,113,133,0.2);--accent-color:#ef4444;--accent-color2:#fb7185;--cta-from:rgba(239,68,68,0.2);--cta-to:rgba(251,113,133,0.1)}
+.theme-gold{--screen-bg:#0a0800;--hero-bg:linear-gradient(160deg,#120f00,#160e00);--hero-glow:rgba(245,158,11,0.4);--hero-glow2:rgba(251,191,36,0.2);--accent-color:#f59e0b;--accent-color2:#fbbf24;--cta-from:rgba(245,158,11,0.2);--cta-to:rgba(251,191,36,0.1)}
+.theme-ocean{--screen-bg:#020b12;--hero-bg:linear-gradient(160deg,#020e18,#011520);--hero-glow:rgba(14,165,233,0.4);--hero-glow2:rgba(56,189,248,0.2);--accent-color:#0ea5e9;--accent-color2:#38bdf8;--cta-from:rgba(14,165,233,0.2);--cta-to:rgba(56,189,248,0.1)}
+.theme-rose{--screen-bg:#0d0408;--hero-bg:linear-gradient(160deg,#150610,#180814);--hero-glow:rgba(236,72,153,0.4);--hero-glow2:rgba(251,113,133,0.2);--accent-color:#ec4899;--accent-color2:#f43f5e;--cta-from:rgba(236,72,153,0.2);--cta-to:rgba(244,63,94,0.1)}
+.theme-slate{--screen-bg:#0a0d12;--hero-bg:linear-gradient(160deg,#0d1018,#111420);--hero-glow:rgba(148,163,184,0.3);--hero-glow2:rgba(203,213,225,0.15);--accent-color:#94a3b8;--accent-color2:#cbd5e1;--cta-from:rgba(148,163,184,0.15);--cta-to:rgba(203,213,225,0.08)}
+.theme-amber{--screen-bg:#080600;--hero-bg:linear-gradient(160deg,#0d0900,#100b00);--hero-glow:rgba(217,119,6,0.4);--hero-glow2:rgba(245,158,11,0.2);--accent-color:#d97706;--accent-color2:#f59e0b;--cta-from:rgba(217,119,6,0.2);--cta-to:rgba(245,158,11,0.1)}
+.theme-violet{--screen-bg:#06040e;--hero-bg:linear-gradient(160deg,#0a0614,#0d0818);--hero-glow:rgba(167,139,250,0.4);--hero-glow2:rgba(192,132,252,0.2);--accent-color:#a78bfa;--accent-color2:#c084fc;--cta-from:rgba(167,139,250,0.2);--cta-to:rgba(192,132,252,0.1)}
+.theme-cyan{--screen-bg:#010c0e;--hero-bg:linear-gradient(160deg,#011018,#01141c);--hero-glow:rgba(6,182,212,0.4);--hero-glow2:rgba(34,211,238,0.2);--accent-color:#06b6d4;--accent-color2:#22d3ee;--cta-from:rgba(6,182,212,0.2);--cta-to:rgba(34,211,238,0.1)}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Skeleton loader shown while fetching -->
+  <div class="skeleton" id="skeleton">
+    <div class="skeleton-circle"></div>
+    <div class="skeleton-line w60"></div>
+    <div class="skeleton-line w40"></div>
+    <div class="skeleton-line w80"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
+</div>
+
+<script>
+const socialHrefs = {
+  whatsapp: (v) => `https://wa.me/${v.replace(/\D/g,'')}`,
+  instagram: (v) => `https://instagram.com/${v.replace('@','')}`,
+  facebook: (v) => `https://facebook.com/${v}`,
+  phone: (v) => `tel:${v}`,
+  maps: (v) => `https://maps.google.com/?q=${encodeURIComponent(v)}`,
+  website: (v) => v,
+  email: (v) => `mailto:${v}`,
+  tiktok: (v) => `https://tiktok.com/@${v.replace('@','')}`,
+  linkedin: (v) => `https://linkedin.com/company/${v}`,
+  youtube: (v) => `https://youtube.com/@${v}`,
+};
+
+function toggleEmbed(btn) {
+  btn.classList.toggle('expanded');
+  btn.nextElementSibling.classList.toggle('open');
+}
+
+function renderProfile(data) {
+  const theme = data.theme || 'midnight';
+  document.body.className = `theme-${theme}`;
+  document.body.style.background = `var(--screen-bg, var(--bg))`;
+  document.title = `${data.business_name} — QR Profile`;
+
+  const avatarStyle = data.avatar_style || 'initials';
+  let avatar;
+  if (avatarStyle === 'logo' && data.logo_url) {
+    avatar = `<img class="avatar-img" src="${data.logo_url}" alt="${data.business_name}">`;
+  } else if (avatarStyle === 'emoji') {
+    avatar = data.emoji || '';
+  } else {
+    avatar = data.initials || '';
+  }
+
+  const socials = (data.socials || []).filter(s => s.enabled && s.value);
+  const socialPills = socials.map(s => {
+    const href = socialHrefs[s.id] ? socialHrefs[s.id](s.value) : '#';
+    return `<a class="social-pill" href="${href}" target="_blank">
+      <span class="social-pill-icon">${s.icon}</span>
+      <span class="social-pill-label">${s.label}</span>
+    </a>`;
+  }).join('');
+
+  const cards = (data.cards || []).map(renderCard).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="profile-page">
+      <div class="profile-hero">
+        <div class="profile-hero-bg"></div>
+        <div class="profile-hero-mesh"></div>
+        <div class="avatar-ring">
+          <div class="avatar-wrap">${avatar}</div>
+        </div>
+        <div class="profile-name">${data.business_name || ''}</div>
+        <div class="profile-tagline">${data.tagline || ''}</div>
+        <p class="profile-bio">${data.bio || ''}</p>
+        <div class="verified-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+          Verified Business
+        </div>
+      </div>
+      <div class="social-strip">${socialPills}</div>
+      <div class="cards-container">${cards}</div>
+      <div class="profile-footer">
+        <a class="powered-by" href="/">Powered by <span class="powered-by-logo">QR<span>Profile</span></span></a>
+      </div>
+    </div>`;
+}
+
+function renderCard(card) {
+  switch(card.type) {
+    case 'link': return renderLinkCard(card);
+    case 'whatsapp': return renderWhatsappCard(card);
+    case 'map': return renderMapCard(card);
+    case 'website': return renderWebsiteCard(card);
+    case 'google': return renderGoogleCard(card);
+    case 'cta': return renderCtaCard(card);
+    case 'text': return renderTextCard(card);
+    case 'video': return renderVideoCard(card);
+    default: return renderLinkCard(card);
+  }
+}
+
+function renderLinkCard(c){return `<div class="qr-card"><a class="card-link" href="${c.url||'#'}" target="_blank"><div class="card-link-icon" style="background:rgba(108,99,255,0.15)">${c.icon||'\ud83d\udd17'}</div><div class="card-link-content"><div class="card-link-title">${c.title}</div><div class="card-link-sub">${c.sub||c.url||''}</div></div><div class="card-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div></a></div>`;}
+
+function renderWhatsappCard(c){const href=`https://wa.me/${(c.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(c.message||'')}`;return `<div class="qr-card" style="background:linear-gradient(135deg,rgba(18,140,50,0.15),rgba(37,211,102,0.08));border-color:rgba(37,211,102,0.15)"><a class="card-link" href="${href}" target="_blank"><div class="card-link-icon" style="background:rgba(37,211,102,0.15);font-size:22px">\ud83d\udcac</div><div class="card-link-content"><div class="card-link-title">${c.title}</div><div class="card-link-sub">${c.message||'Send a message'}</div></div><div class="card-link-arrow" style="color:#4ade80"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div></a></div>`;}
+
+function renderMapCard(c){const isE=c.view==='embed';const u=`https://maps.google.com/?q=${encodeURIComponent(c.address||'')}`;return `<div class="qr-card"><button class="card-expand-btn ${isE?'expanded':''}" onclick="toggleEmbed(this)"><div class="card-link-icon" style="background:rgba(234,67,53,0.15);font-size:20px">\ud83d\udccd</div><div class="card-expand-label"><div class="card-expand-title">${c.title}</div><div class="card-expand-sub">${c.address||''}</div></div><div class="card-expand-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div></button><div class="card-embed-area ${isE?'open':''}"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d57466.097!2d28.034088!3d-26.195246!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1e950c68f0406a51%3A0x238ac9d9b1d34041!2sJohannesburg%2C%20South%20Africa!5e0!3m2!1sen!2s!4v1000000000000" class="map-embed-frame" allowfullscreen loading="lazy"></iframe><div style="padding:10px 18px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03)"><span style="font-size:11px;color:var(--text3)">${c.address||''}</span><a href="${u}" target="_blank" style="font-size:12px;font-weight:600;color:#f87171;text-decoration:none">Open Maps \u2192</a></div></div></div>`;}
+
+function renderWebsiteCard(c){const isE=c.view==='embed';return `<div class="qr-card"><button class="card-expand-btn ${isE?'expanded':''}" onclick="toggleEmbed(this)"><div class="card-link-icon" style="background:rgba(14,165,233,0.15);font-size:20px">\ud83c\udf10</div><div class="card-expand-label"><div class="card-expand-title">${c.title}</div><div class="card-expand-sub">${c.url||''}</div></div><div class="card-expand-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div></button><div class="card-embed-area ${isE?'open':''}"><div class="website-preview-bar"><div class="browser-dots2"><div class="browser-dot2" style="background:#ff5f57"></div><div class="browser-dot2" style="background:#febc2e"></div><div class="browser-dot2" style="background:#28c840"></div></div><div class="url-bar">${c.url||'https://'}</div></div><div class="website-preview-placeholder"><div class="site-name">${c.title}</div><div class="site-url">${c.url||''}</div></div><div style="padding:10px 18px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.02);border-top:1px solid rgba(255,255,255,0.05)"><span style="font-size:11px;color:var(--text3)">Preview</span><a href="${c.url}" target="_blank" style="font-size:12px;font-weight:600;color:#38bdf8;text-decoration:none">Visit \u2192</a></div></div></div>`;}
+
+function renderGoogleCard(c){const stars='\u2605'.repeat(Math.round(parseFloat(c.rating||5))).padEnd(5,'\u2606');return `<div class="qr-card"><div class="gbiz-inner"><div class="gbiz-brand-row"><div class="gbiz-g-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg></div><div><div class="gbiz-biz-name">${c.biz||c.title}</div><div class="gbiz-biz-cat">Google Business Profile</div></div></div><div class="gbiz-stats-row"><div class="gbiz-stat"><div class="gbiz-stat-val">${c.rating||'5.0'}</div><div class="gbiz-stat-label">Rating</div></div><div class="gbiz-divider"></div><div class="gbiz-stat"><div class="stars2">${[...stars].map(s=>`<span class="star2">${s}</span>`).join('')}</div></div><div class="gbiz-divider"></div><div class="gbiz-stat"><div class="gbiz-stat-val">${c.reviews||'0'}</div><div class="gbiz-stat-label">Reviews</div></div></div></div><div class="gbiz-actions"><a href="${c.url||'#'}" target="_blank" class="gbiz-action-btn gbiz-action-primary" style="text-align:center;text-decoration:none;display:block;">Write a Review</a><a href="${c.url||'#'}" target="_blank" class="gbiz-action-btn gbiz-action-secondary" style="text-align:center;text-decoration:none;display:block;">View Profile</a></div></div>`;}
+
+function renderCtaCard(c){return `<div class="qr-card"><div class="cta-card"><div class="cta-badge">${c.badge||'\u26a1 Offer'}</div><div class="cta-title">${c.title}</div><div class="cta-desc">${c.desc||''}</div><a href="${c.url||'#'}" target="_blank" class="cta-action">${c.btnText||'Learn More'} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div></div>`;}
+
+function renderTextCard(c){return `<div class="qr-card"><div style="padding:20px 18px;background:rgba(255,255,255,0.04)"><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:8px">${c.title}</div><div style="font-size:13px;color:var(--text2);line-height:1.7">${c.content||''}</div></div></div>`;}
+
+function renderVideoCard(c){const isE=c.view==='embed';return `<div class="qr-card"><button class="card-expand-btn ${isE?'expanded':''}" onclick="toggleEmbed(this)"><div class="card-link-icon" style="background:rgba(255,0,0,0.12);font-size:20px">\u25b6\ufe0f</div><div class="card-expand-label"><div class="card-expand-title">${c.title}</div><div class="card-expand-sub">YouTube Video</div></div><div class="card-expand-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div></button><div class="card-embed-area ${isE?'open':''}"><iframe src="${c.url||''}" height="200" allowfullscreen style="width:100%;border:none;display:block"></iframe></div></div>`;}
+
+function show404() {
+  document.getElementById('app').innerHTML = `<div class="not-found"><h1>404</h1><p>This profile doesn't exist or may have been removed.</p><a href="/">Go to homepage</a></div>`;
+}
+
+// Boot
+(async function() {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  // URL is /p/slug
+  const slug = parts[parts.length - 1];
+  if (!slug || slug === 'p') { show404(); return; }
+
+  try {
+    const res = await fetch(`/api/profiles/${slug}`);
+    if (!res.ok) { show404(); return; }
+    const json = await res.json();
+    renderProfile(json.data);
+  } catch {
+    show404();
+  }
+})();
+</script>
+</body>
+</html>
