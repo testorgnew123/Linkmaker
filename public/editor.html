@@ -1558,9 +1558,10 @@ async function searchGooglePlace(cardId) {
       resultsDiv.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:4px 0">No results found</div>';
       return;
     }
+    window._placeResults = { cardId, places };
     resultsDiv.innerHTML = '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Select your business:</div>' +
-      places.map(p => `
-      <div onclick="selectGooglePlace(${cardId}, '${p.placeId}', ${JSON.stringify(p.name).replace(/'/g,"\\'")}, ${JSON.stringify(p.rating)}, ${JSON.stringify(p.reviewCount)}, ${JSON.stringify(p.mapsUrl).replace(/'/g,"\\'")})"
+      places.map((p, i) => `
+      <div onclick="pickGooglePlaceResult(${i})"
         style="padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:4px;transition:var(--transition)"
         onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(108,99,255,0.06)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
@@ -1575,6 +1576,14 @@ async function searchGooglePlace(cardId) {
     btn.textContent = 'Fetch';
     btn.disabled = false;
   }
+}
+
+function pickGooglePlaceResult(index) {
+  const r = window._placeResults;
+  if (!r) return;
+  const p = r.places[index];
+  if (!p) return;
+  selectGooglePlace(r.cardId, p.placeId, p.name, p.rating, p.reviewCount, p.mapsUrl);
 }
 
 function selectGooglePlace(cardId, placeId, name, rating, reviewCount, mapsUrl) {
