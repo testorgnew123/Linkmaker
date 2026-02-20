@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Profile Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #080c14;
+  --surface: #0f1624;
+  --surface2: #161e30;
+  --surface3: #1c2640;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --accent: #6c63ff;
+  --accent2: #ff6b6b;
+  --accent3: #43e97b;
+  --text: #e8eaf2;
+  --text2: #8892a4;
+  --text3: #4e5a6e;
+  --white: #ffffff;
+  --radius: 18px;
+  --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Nav ─────────────────────────────────────────────── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.logo-icon {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: grid; place-items: center;
+}
+
+.logo-icon svg { width: 20px; height: 20px; }
+
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--white);
+}
+
+.nav-actions { display: flex; gap: 10px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { color: var(--white); border-color: rgba(255,255,255,0.25); }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--white);
+}
+.btn-primary:hover { filter: brightness(1.15); }
+
+/* ── Hero ────────────────────────────────────────────── */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(36px, 6vw, 56px);
+  color: var(--white);
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+
+.hero h1 .gradient {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 17px;
+  color: var(--text2);
+  max-width: 520px;
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.hero-actions .btn { padding: 14px 32px; font-size: 15px; border-radius: 12px; }
+
+/* ── Auth Modal ──────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+
+.modal h2 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.modal .subtitle {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 24px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: none; border: none;
+  color: var(--text3);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--white);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: var(--transition);
+}
+.field input:focus { border-color: var(--accent); }
+
+.form-error {
+  color: var(--accent2);
+  font-size: 13px;
+  margin-bottom: 14px;
+  min-height: 18px;
+}
+
+.modal .btn-primary {
+  width: 100%;
+  justify-content: center;
+  padding: 13px;
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.modal .switch-text {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text3);
+}
+.modal .switch-text a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+.modal .switch-text a:hover { text-decoration: underline; }
+
+/* ── Dashboard (shown when logged in) ──────────────── */
+.dashboard {
+  display: none;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard h2 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--white);
+  margin-bottom: 20px;
+}
+
+.profile-list { display: flex; flex-direction: column; gap: 12px; }
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+.profile-card:hover { border-color: var(--border2); }
+
+.profile-card-info h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.profile-card-info span {
+  font-size: 13px;
+  color: var(--text3);
+}
+
+.profile-card-actions { display: flex; gap: 8px; }
+.profile-card-actions a {
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+}
+.link-edit { background: var(--surface2); color: var(--accent); border: 1px solid var(--border2); }
+.link-edit:hover { border-color: var(--accent); }
+.link-view { background: var(--accent); color: var(--white); }
+.link-view:hover { filter: brightness(1.15); }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text3);
+  font-size: 15px;
+}
+
+.create-profile-btn {
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ─────────────────────────────────────── -->
+<nav class="nav">
+  <a href="/" class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><circle cx="17.5" cy="17.5" r="3.5"/>
+      </svg>
+    </div>
+    <span class="logo-text">QR Profile</span>
+  </a>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-ghost" onclick="showModal('login')">Log in</button>
+    <button class="btn btn-primary" onclick="showModal('register')">Sign up</button>
+  </div>
+</nav>
+
+<!-- ── Hero (logged out) ──────────────────────── -->
+<section class="hero" id="hero">
+  <h1>Your business card,<br><span class="gradient">one scan away</span></h1>
+  <p>Create a beautiful digital profile and share it instantly with a QR code. No app needed — just scan and connect.</p>
+  <div class="hero-actions">
+    <button class="btn btn-primary" onclick="showModal('register')">Get Started</button>
+    <button class="btn btn-ghost" onclick="showModal('login')">I have an account</button>
+  </div>
+</section>
+
+<!-- ── Dashboard (logged in) ──────────────────── -->
+<section class="dashboard" id="dashboard">
+  <h2>Your Profiles</h2>
+  <div class="profile-list" id="profile-list"></div>
+</section>
+
+<!-- ── Auth Modal ─────────────────────────────── -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="hideModal()">&times;</button>
+    <h2 id="modal-title">Log in</h2>
+    <p class="subtitle" id="modal-subtitle">Welcome back</p>
+    <form id="auth-form" onsubmit="handleAuth(event)">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="8" autocomplete="current-password">
+      </div>
+      <div class="form-error" id="form-error"></div>
+      <button type="submit" class="btn btn-primary" id="auth-submit">Log in</button>
+      <p class="switch-text" id="switch-text">
+        Don't have an account? <a onclick="showModal('register')">Sign up</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+let authMode = 'login';
+let currentUser = null;
+
+// ── Modal ────────────────────────────────────────
+function showModal(mode) {
+  authMode = mode;
+  const isLogin = mode === 'login';
+  document.getElementById('modal-title').textContent = isLogin ? 'Log in' : 'Create account';
+  document.getElementById('modal-subtitle').textContent = isLogin ? 'Welcome back' : 'Start building your profile';
+  document.getElementById('auth-submit').textContent = isLogin ? 'Log in' : 'Sign up';
+  document.getElementById('switch-text').innerHTML = isLogin
+    ? 'Don\'t have an account? <a onclick="showModal(\'register\')">Sign up</a>'
+    : 'Already have an account? <a onclick="showModal(\'login\')">Log in</a>';
+  document.getElementById('form-error').textContent = '';
+  document.getElementById('auth-modal').classList.add('active');
+}
+
+function hideModal() {
+  document.getElementById('auth-modal').classList.remove('active');
+}
+
+document.getElementById('auth-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) hideModal();
+});
+
+// ── Auth ─────────────────────────────────────────
+async function handleAuth(e) {
+  e.preventDefault();
+  const errEl = document.getElementById('form-error');
+  errEl.textContent = '';
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json();
+    if (!res.ok) { errEl.textContent = json.error || 'Something went wrong'; return; }
+    currentUser = json.data;
+    hideModal();
+    showLoggedIn();
+  } catch (err) {
+    errEl.textContent = 'Network error — try again';
+  }
+}
+
+async function checkSession() {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (!res.ok) return;
+    const json = await res.json();
+    currentUser = json.data;
+    showLoggedIn();
+  } catch {}
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  currentUser = null;
+  showLoggedOut();
+}
+
+// ── UI state ─────────────────────────────────────
+function showLoggedIn() {
+  document.getElementById('hero').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('nav-actions').innerHTML =
+    '<button class="btn btn-ghost" onclick="logout()">Log out</button>';
+  loadProfiles();
+}
+
+function showLoggedOut() {
+  document.getElementById('hero').style.display = '';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('nav-actions').innerHTML =
+    '<button class="btn btn-ghost" onclick="showModal(\'login\')">Log in</button>' +
+    '<button class="btn btn-primary" onclick="showModal(\'register\')">Sign up</button>';
+}
+
+// ── Profiles ─────────────────────────────────────
+async function loadProfiles() {
+  const list = document.getElementById('profile-list');
+  try {
+    const res = await fetch('/api/profiles');
+    if (!res.ok) { list.innerHTML = '<div class="empty-state">Could not load profiles</div>'; return; }
+    const json = await res.json();
+    const profiles = json.data;
+
+    if (!profiles || !profiles.length) {
+      list.innerHTML =
+        '<div class="empty-state">No profiles yet — create your first one!</div>' +
+        '<a href="/onboarding.html" class="btn btn-primary create-profile-btn" style="margin:20px auto 0;display:inline-flex;">Create Profile</a>';
+      return;
+    }
+
+    list.innerHTML = profiles.map(p => `
+      <div class="profile-card">
+        <div class="profile-card-info">
+          <h3>${esc(p.business_name)}</h3>
+          <span>/p/${esc(p.slug)}</span>
+        </div>
+        <div class="profile-card-actions">
+          <a class="link-edit" href="/editor.html?slug=${encodeURIComponent(p.slug)}">Edit</a>
+          <a class="link-view" href="/p/${encodeURIComponent(p.slug)}">View</a>
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    list.innerHTML = '<div class="empty-state">Network error</div>';
+  }
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ── Init ─────────────────────────────────────────
+checkSession();
+</script>
+</body>
+</html>

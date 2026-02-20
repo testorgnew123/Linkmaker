@@ -1061,7 +1061,7 @@ const state = {
     { id: 1, type: 'whatsapp', title: 'Chat on WhatsApp', sub: 'Get instant assistance', phone: '+27000000000', message: 'Hi, I am interested in a property' },
     { id: 2, type: 'website', title: 'Our Website', url: 'https://desirerealty.co.za', view: 'card' },
     { id: 3, type: 'map', title: 'Find Our Office', address: 'Johannesburg, South Africa', lat: '-26.195', lng: '28.034', view: 'card' },
-    { id: 4, type: 'google', title: 'Leave a Review', biz: 'Desire Realty', rating: '5.0', reviews: '124', url: 'https://business.google.com' },
+    { id: 4, type: 'google', title: 'Leave a Review', biz: 'Desire Realty', rating: '5.0', reviews: '124', url: 'https://business.google.com', placeId: '', placeQuery: '' },
     { id: 5, type: 'cta', title: 'Premium Stands Available', badge: '🔥 Featured Listing', desc: 'Secure your piece of premium land. Flexible payment plans for qualifying buyers.', btnText: 'View Properties', url: 'https://desirerealty.co.za/listings' },
     { id: 6, type: 'link', title: 'Book a Consultation', sub: 'Free 30-min property advice', icon: '📅', url: 'https://calendly.com', view: 'card' },
   ]
@@ -1195,7 +1195,7 @@ function getCardFields(card) {
     case 'link': return f('Title', 'title', card.title) + f('Icon (emoji)', 'icon', card.icon) + f('URL', 'url', card.url) + f('Subtitle', 'sub', card.sub);
     case 'map': return f('Title', 'title', card.title) + f('Address/Query', 'address', card.address) + viewToggleField(card);
     case 'website': return f('Title', 'title', card.title) + f('URL', 'url', card.url) + viewToggleField(card);
-    case 'google': return f('Title', 'title', card.title) + f('Business Name', 'biz', card.biz) + f('Rating', 'rating', card.rating) + f('Review Count', 'reviews', card.reviews) + f('URL', 'url', card.url);
+    case 'google': return googleCardFields(card);
     case 'cta': return f('Title', 'title', card.title) + f('Badge Text', 'badge', card.badge) + f('Description', 'desc', card.desc) + f('Button Text', 'btnText', card.btnText) + f('URL', 'url', card.url);
     case 'text': return f('Title', 'title', card.title) + `<div class="field"><label>Content</label><textarea oninput="updateCardField(${card.id},'content',this.value)">${card.content||''}</textarea></div>`;
     case 'whatsapp': return f('Title', 'title', card.title) + f('Phone Number', 'phone', card.phone) + f('Pre-filled Message', 'message', card.message);
@@ -1203,6 +1203,130 @@ function getCardFields(card) {
     default: return f('Title', 'title', card.title) + f('URL', 'url', card.url);
   }
 }
+function googleCardFields(card) {
+  const f = (label, id, val, type='text', readonly=false) => `
+    <div class="field">
+      <label>${label}</label>
+      <input type="${type}" value="${val||''}" ${readonly ? 'readonly style="opacity:0.7;cursor:not-allowed"' : ''} oninput="updateCardField(${card.id},'${id}',this.value)">
+    </div>`;
+
+  const linked = !!card.placeId;
+
+  return `
+    <div class="field">
+      <label>Paste Google Maps URL or Business Name</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="gbiz-search-${card.id}"
+          placeholder="Paste Maps embed URL or type business name"
+          value="${card.placeQuery||''}" style="flex:1"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();searchGooglePlace(${card.id})}">
+        <button onclick="searchGooglePlace(${card.id})" style="background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;white-space:nowrap" id="gbiz-search-btn-${card.id}">Fetch</button>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">Tip: Copy your Google Maps embed URL and paste it here</div>
+      <div id="gbiz-results-${card.id}" style="margin-top:6px"></div>
+    </div>
+    ${linked ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:10px;color:var(--accent3)">&#10003; Linked to Google</span>
+      <button onclick="unlinkGooglePlace(${card.id})" style="background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;text-decoration:underline">Unlink</button>
+    </div>` : ''}
+  ` + f('Title', 'title', card.title) +
+    f('Business Name', 'biz', card.biz, 'text', linked) +
+    f('Rating', 'rating', card.rating, 'text', linked) +
+    f('Review Count', 'reviews', card.reviews, 'text', linked) +
+    `<div class="field">
+      <label>Google Review / Share URL</label>
+      <input type="text" value="${card.url||''}" ${linked ? 'readonly style="opacity:0.7;cursor:not-allowed"' : ''} oninput="updateCardField(${card.id},'url',this.value)">
+    </div>` +
+    (linked ? `<div style="margin-bottom:10px">
+      <button onclick="refreshGooglePlace(${card.id})" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif">&#8635; Refresh ratings from Google</button>
+    </div>` : '');
+}
+
+async function searchGooglePlace(cardId) {
+  const input = document.getElementById('gbiz-search-' + cardId);
+  const resultsDiv = document.getElementById('gbiz-results-' + cardId);
+  const btn = document.getElementById('gbiz-search-btn-' + cardId);
+  const query = input?.value?.trim();
+  if (!query) return;
+
+  btn.textContent = '...';
+  btn.disabled = true;
+  resultsDiv.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:4px 0">Searching Google...</div>';
+
+  try {
+    const resp = await fetch('/api/google-place/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    const json = await resp.json();
+    if (!resp.ok || json.error) {
+      resultsDiv.innerHTML = `<div style="font-size:11px;color:#ef4444;padding:4px 0">${json.error || 'Search failed'}</div>`;
+      return;
+    }
+    const places = json.data || [];
+    if (places.length === 0) {
+      resultsDiv.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:4px 0">No results found</div>';
+      return;
+    }
+    resultsDiv.innerHTML = '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Select your business:</div>' +
+      places.map(p => `
+      <div onclick="selectGooglePlace(${cardId}, '${p.placeId}', ${JSON.stringify(p.name).replace(/'/g,"\\'")}, ${JSON.stringify(p.rating)}, ${JSON.stringify(p.reviewCount)}, ${JSON.stringify(p.mapsUrl).replace(/'/g,"\\'")})"
+        style="padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:4px;transition:var(--transition)"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(108,99,255,0.06)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
+        <div style="font-size:13px;font-weight:600;color:var(--white)">${p.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${p.address || ''}</div>
+        ${p.rating ? `<div style="font-size:11px;color:#f7c948;margin-top:2px">${'\u2605'.repeat(Math.round(p.rating))}${'\u2606'.repeat(5-Math.round(p.rating))} ${p.rating} (${p.reviewCount} reviews)</div>` : '<div style="font-size:11px;color:var(--text3);margin-top:2px">No ratings yet</div>'}
+      </div>
+    `).join('');
+  } catch (err) {
+    resultsDiv.innerHTML = `<div style="font-size:11px;color:#ef4444;padding:4px 0">Network error</div>`;
+  } finally {
+    btn.textContent = 'Fetch';
+    btn.disabled = false;
+  }
+}
+
+function selectGooglePlace(cardId, placeId, name, rating, reviewCount, mapsUrl) {
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) return;
+  card.placeId = placeId;
+  card.placeQuery = name;
+  card.biz = name;
+  card.rating = rating != null ? String(rating) : '';
+  card.reviews = reviewCount != null ? String(reviewCount) : '0';
+  if (mapsUrl) card.url = mapsUrl;
+  renderCardsEditor();
+  renderProfile();
+}
+
+function unlinkGooglePlace(cardId) {
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) return;
+  card.placeId = '';
+  card.placeQuery = '';
+  renderCardsEditor();
+}
+
+async function refreshGooglePlace(cardId) {
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card || !card.placeId) return;
+
+  try {
+    const resp = await fetch(`/api/google-place?placeId=${encodeURIComponent(card.placeId)}`);
+    const json = await resp.json();
+    if (!resp.ok || json.error) return;
+    const d = json.data;
+    card.biz = d.name || card.biz;
+    card.rating = d.rating != null ? String(d.rating) : card.rating;
+    card.reviews = d.reviewCount != null ? String(d.reviewCount) : card.reviews;
+    if (d.mapsUrl) card.url = d.mapsUrl;
+    renderCardsEditor();
+    renderProfile();
+  } catch (err) { /* silent */ }
+}
+
 function viewToggleField(card) {
   return `<div class="field">
     <label>Default View</label>
@@ -1241,7 +1365,7 @@ function addCard(type) {
     link: { title: 'New Link', sub: 'Click to visit', icon: '🔗', url: 'https://', view: 'card' },
     map: { title: 'Our Location', address: 'New York, USA', view: 'card' },
     website: { title: 'Our Website', url: 'https://example.com', view: 'card' },
-    google: { title: 'Review Us', biz: state.profile.name, rating: '5.0', reviews: '0', url: 'https://business.google.com' },
+    google: { title: 'Review Us', biz: state.profile.name, rating: '', reviews: '', url: '', placeId: '', placeQuery: '' },
     cta: { title: 'Special Offer', badge: '⚡ Limited Time', desc: 'Describe your offer here.', btnText: 'Learn More', url: 'https://' },
     text: { title: 'About Us', content: 'Write something here...' },
     whatsapp: { title: 'Chat on WhatsApp', sub: 'We reply instantly', phone: '', message: 'Hi, I found you via QR code' },

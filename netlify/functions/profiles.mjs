@@ -18,6 +18,18 @@ function randomSuffix() {
   return Math.random().toString(36).slice(2, 6);
 }
 
+// GET /api/profiles — list current user's profiles
+app.get('/api/profiles', requireAuth, async (req, res) => {
+  try {
+    const sql = getDB();
+    const rows = await sql`SELECT * FROM profiles WHERE owner_id = ${req.userId} ORDER BY created_at DESC`;
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('List profiles error:', err);
+    res.status(500).json({ error: 'Failed to list profiles', code: 'SERVER_ERROR' });
+  }
+});
+
 // POST /api/profiles — create a new profile
 app.post('/api/profiles', requireAuth, async (req, res) => {
   try {

@@ -72,7 +72,9 @@ app.put('/api/profiles/:slug', requireAuth, async (req, res) => {
     const bio = sanitizeString(req.body.bio, 1000);
     const initials = sanitizeString(req.body.initials, 3);
     const emoji = sanitizeString(req.body.emoji, 10);
-    const avatarStyle = req.body.avatar_style === 'emoji' ? 'emoji' : 'initials';
+    const avatarStyle = ['emoji', 'logo', 'initials'].includes(req.body.avatar_style)
+      ? req.body.avatar_style
+      : 'initials';
     const theme = sanitizeString(req.body.theme, 30) || 'midnight';
     const socials = JSON.stringify(req.body.socials || []);
     const cards = JSON.stringify(req.body.cards || []);
