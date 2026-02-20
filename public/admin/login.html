@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — QR Profile Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:        #080c14;
+  --surface:   #0f1624;
+  --surface2:  #161e30;
+  --surface3:  #1c2640;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --accent:    #6c63ff;
+  --accent2:   #ff6b6b;
+  --accent3:   #43e97b;
+  --text:      #e8eaf2;
+  --text2:     #8892a4;
+  --text3:     #4e5a6e;
+  --white:     #ffffff;
+  --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(108,99,255,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Logo ─────────────────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 1;
+}
+.logo-mark {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #9c8fff);
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-mark svg { width: 18px; height: 18px; }
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 16px;
+  color: var(--white); letter-spacing: -0.3px;
+}
+.logo-text span { color: var(--accent); }
+.admin-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 2px 7px;
+  margin-left: 4px;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.5);
+}
+
+.card-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.card h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+.card-sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* ── Form fields ──────────────────────────────────────── */
+.field { margin-bottom: 14px; }
+.field label {
+  display: block;
+  font-size: 12px; font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  transition: var(--transition);
+}
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+}
+.field input::placeholder { color: var(--text3); }
+
+/* ── Error message ────────────────────────────────────── */
+.error-msg {
+  background: rgba(255,107,107,0.1);
+  border: 1px solid rgba(255,107,107,0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--accent2);
+  margin-bottom: 16px;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+/* ── Submit button ────────────────────────────────────── */
+.submit-btn {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 16px rgba(108,99,255,0.4);
+  margin-top: 4px;
+}
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(108,99,255,0.55);
+  background: #7c74ff;
+}
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Footer note ──────────────────────────────────────── */
+.login-note {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text3);
+  text-align: center;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<div class="logo">
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3M14 21h5"/>
+    </svg>
+  </div>
+  <div class="logo-text">QR<span>Profile</span></div>
+  <span class="admin-badge">Admin</span>
+</div>
+
+<div class="card">
+  <div class="card-eyebrow">Restricted Access</div>
+  <h1>Admin Portal</h1>
+  <p class="card-sub">Sign in with your admin credentials to continue.</p>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <form id="loginForm" onsubmit="handleLogin(event)">
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="admin@qrprofile.com" autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
+  </form>
+
+  <p class="login-note">Admin accounts are provisioned via the seed script only.<br>Contact your system administrator if you need access.</p>
+</div>
+
+<script>
+// On load: if already have a valid admin session, skip login
+(async () => {
+  try {
+    const res = await fetch('/api/admin/stats', { credentials: 'include' });
+    if (res.ok) window.location.replace('/admin/');
+  } catch {
+    // No session — stay on login page
+  }
+})();
+
+async function handleLogin(e) {
+  e.preventDefault();
+
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn      = document.getElementById('submitBtn');
+  const errEl    = document.getElementById('errorMsg');
+
+  errEl.classList.remove('visible');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  try {
+    // Step 1: authenticate
+    const loginRes = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    });
+
+    const loginBody = await loginRes.json();
+
+    if (!loginRes.ok) {
+      showError(loginBody.error || 'Invalid credentials');
+      return;
+    }
+
+    // Step 2: verify this account is actually admin
+    // (requireAdmin on /api/admin/stats enforces this server-side)
+    const checkRes = await fetch('/api/admin/stats', { credentials: 'include' });
+
+    if (!checkRes.ok) {
+      // Logged in but not admin — clear cookie is not possible from JS (httpOnly),
+      // but we can inform the user and let them know.
+      showError('This account does not have admin access.');
+      // Log them out silently
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      return;
+    }
+
+    window.location.replace('/admin/');
+  } catch {
+    showError('Network error — please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+</script>
+</body>
+</html>

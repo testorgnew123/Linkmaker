@@ -21,3 +21,25 @@
 import { neon } from '@neondatabase/serverless';
 const sql = neon(process.env.DATABASE_URL);
 const rows = await sql`SELECT * FROM profiles WHERE slug = ${slug}`;
+
+
+## Admin Query Pattern
+Admin endpoints JOIN users + profiles. Always use:
+SELECT p.*, u.email as owner_email
+FROM profiles p
+JOIN users u ON u.id = p.owner_id
+Never expose password_hash — always SELECT explicit columns.
+Role is double-checked from DB on every admin request, not just JWT.
+
+## Admin Rules
+- Admin account exists only via seed script — no API path to become admin
+- Role is always re-checked from DB on every admin request, never trusted from JWT alone
+- Impersonation: JWT carries impersonatedBy field — impersonated sessions 
+  cannot access /api/admin/* and cannot impersonate further
+- Every admin destructive action must be written to audit_log table
+- Never delete or demote another admin via API unless ALLOW_ADMIN_DELETE=true in env
+
+## Audit Log Pattern
+Always insert to audit_log after any admin action:
+await sql`INSERT INTO audit_log (admin_id, action, target_id, metadata)
+          VALUES (${adminId}, ${action}, ${targetId}, ${JSON.stringify(meta)})`

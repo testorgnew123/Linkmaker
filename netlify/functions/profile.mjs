@@ -20,7 +20,7 @@ app.get('/api/profiles/:slug', async (req, res) => {
     const sql = getDB();
     const rows = await sql`
       SELECT id, slug, business_name, tagline, bio, initials, emoji,
-             avatar_style, logo_url, theme, socials, cards, created_at, updated_at
+             avatar_style, logo_url, theme, socials, cards, card_limit, created_at, updated_at
       FROM profiles WHERE slug = ${slug}
     `;
 
@@ -45,13 +45,22 @@ app.put('/api/profiles/:slug', requireAuth, async (req, res) => {
 
     const sql = getDB();
 
-    // Verify ownership
-    const existing = await sql`SELECT id, owner_id FROM profiles WHERE slug = ${slug}`;
+    // Verify ownership and fetch card_limit in one query
+    const existing = await sql`SELECT id, owner_id, card_limit FROM profiles WHERE slug = ${slug}`;
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Profile not found', code: 'NOT_FOUND' });
     }
     if (existing[0].owner_id !== req.userId) {
       return res.status(403).json({ error: 'Not your profile', code: 'FORBIDDEN' });
+    }
+
+    // Enforce card limit — count before any sanitisation
+    const incomingCards = Array.isArray(req.body.cards) ? req.body.cards : [];
+    if (incomingCards.length > existing[0].card_limit) {
+      return res.status(400).json({
+        error: `Card limit reached (max ${existing[0].card_limit})`,
+        code: 'CARD_LIMIT_EXCEEDED',
+      });
     }
 
     const businessName = sanitizeString(req.body.business_name, 200);

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claim Your Handle — QR Profile Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg:        #080c14;
+  --surface:   #0f1624;
+  --surface2:  #161e30;
+  --surface3:  #1c2640;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --accent:    #6c63ff;
+  --accent2:   #ff6b6b;
+  --accent3:   #43e97b;
+  --gold:      #f7c948;
+  --text:      #e8eaf2;
+  --text2:     #8892a4;
+  --text3:     #4e5a6e;
+  --white:     #ffffff;
+  --radius:    18px;
+  --radius-sm: 10px;
+  --shadow:    0 8px 40px rgba(0,0,0,0.4);
+  --shadow-lg: 0 20px 80px rgba(0,0,0,0.6);
+  --glow:      0 0 40px rgba(108,99,255,0.25);
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ── Background ambient glow ─────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Logo ────────────────────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 1;
+}
+.logo-mark {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #9c8fff);
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-mark svg { width: 20px; height: 20px; }
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 18px;
+  color: var(--white);
+  letter-spacing: -0.3px;
+}
+.logo-text span { color: var(--accent); }
+
+/* ── Card ────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  padding: 48px 44px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Step 1 ──────────────────────────────────────────────── */
+#step1 { display: block; }
+#step2 { display: none; }
+
+.step-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.card h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.2;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.card-sub {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 36px;
+  line-height: 1.6;
+}
+
+/* ── Handle input ────────────────────────────────────────── */
+.handle-field { margin-bottom: 10px; }
+
+.handle-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+
+.handle-input-wrap {
+  position: relative;
+}
+.handle-input-wrap .at {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text3);
+  pointer-events: none;
+  user-select: none;
+}
+.handle-input-wrap input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 13px 48px 13px 34px;
+  color: var(--white);
+  font-size: 17px;
+  font-weight: 500;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.3px;
+  outline: none;
+  transition: var(--transition);
+}
+.handle-input-wrap input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+}
+.handle-input-wrap input.valid   { border-color: var(--accent3); box-shadow: 0 0 0 3px rgba(67,233,123,0.12); }
+.handle-input-wrap input.invalid { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(255,107,107,0.12); }
+.handle-input-wrap input.warning { border-color: var(--gold);    box-shadow: 0 0 0 3px rgba(247,201,72,0.12); }
+
+/* spinner inside input */
+.check-spinner {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 18px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+/* ── Status line ─────────────────────────────────────────── */
+.handle-status {
+  min-height: 22px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+.handle-status.available { color: var(--accent3); }
+.handle-status.taken     { color: var(--accent2); }
+.handle-status.invalid   { color: var(--gold); }
+.handle-status.empty     { color: transparent; }
+
+/* ── Rules hint ──────────────────────────────────────────── */
+.handle-rules {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--text3);
+  line-height: 1.8;
+}
+.handle-rules span { display: block; }
+
+/* ── Preview URL ─────────────────────────────────────────── */
+.preview-bar {
+  margin: 20px 0 28px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.preview-bar .preview-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.preview-bar .preview-url {
+  font-size: 13px;
+  color: var(--text2);
+  font-family: 'Outfit', monospace;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.preview-bar .preview-url .preview-handle {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Claim button ────────────────────────────────────────── */
+.claim-btn {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+  letter-spacing: 0.2px;
+}
+.claim-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(108,99,255,0.55);
+  background: #7c74ff;
+}
+.claim-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Step 2 — Success ────────────────────────────────────── */
+.success-icon {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba(67,233,123,0.12);
+  border: 2px solid rgba(67,233,123,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin-bottom: 24px;
+}
+
+#step2 h1 { margin-bottom: 6px; }
+
+.live-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(108,99,255,0.1);
+  border: 1px solid rgba(108,99,255,0.25);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 32px;
+  margin-top: 4px;
+}
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent3);
+  box-shadow: 0 0 8px rgba(67,233,123,0.7);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.2); }
+}
+
+.success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(108,99,255,0.55);
+  background: #7c74ff;
+}
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-secondary:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--white);
+}
+.btn-secondary.copied {
+  border-color: var(--accent3);
+  color: var(--accent3);
+}
+
+/* ── Loading overlay ─────────────────────────────────────── */
+#loader {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: opacity 0.3s;
+}
+#loader .spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+</style>
+</head>
+<body>
+
+<!-- Auth/redirect loading overlay -->
+<div id="loader"><div class="spinner"></div></div>
+
+<div class="logo">
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3M14 21h5"/>
+    </svg>
+  </div>
+  <div class="logo-text">QR<span>Profile</span></div>
+</div>
+
+<div class="card">
+
+  <!-- ── STEP 1: Claim handle ── -->
+  <div id="step1">
+    <div class="step-eyebrow">Step 1 of 1</div>
+    <h1>Claim your handle</h1>
+    <p class="card-sub">This becomes your permanent public URL. Choose wisely — it's yours forever.</p>
+
+    <div class="handle-field">
+      <label class="handle-label" for="handleInput">Your handle</label>
+      <div class="handle-input-wrap">
+        <span class="at">@</span>
+        <input
+          type="text"
+          id="handleInput"
+          placeholder="yourname"
+          maxlength="30"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="none"
+          spellcheck="false"
+        >
+        <div class="check-spinner" id="checkSpinner"></div>
+      </div>
+    </div>
+
+    <div class="handle-status empty" id="handleStatus"></div>
+
+    <div class="handle-rules">
+      <span>· Lowercase letters, numbers, and hyphens only</span>
+      <span>· Must start and end with a letter or number</span>
+      <span>· 3–30 characters, no consecutive hyphens</span>
+    </div>
+
+    <div class="preview-bar">
+      <span class="preview-icon">🔗</span>
+      <span class="preview-url" id="previewUrl">
+        <span id="previewBase"></span><span class="preview-handle" id="previewHandle">yourname</span>
+      </span>
+    </div>
+
+    <button class="claim-btn" id="claimBtn" disabled>Claim Handle</button>
+  </div>
+
+  <!-- ── STEP 2: Success ── -->
+  <div id="step2">
+    <div class="success-icon">🎉</div>
+    <h1>Your handle is live!</h1>
+    <div class="live-handle">
+      <span class="live-dot"></span>
+      <span id="liveHandleText"></span>
+    </div>
+    <p class="card-sub" style="margin-bottom: 28px;">Your public profile page is ready. Start building it out now.</p>
+    <div class="success-actions">
+      <a class="btn-primary" id="buildBtn" href="#">
+        Start building my page
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <button class="btn-secondary" id="copyBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copy my link
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────────
+const DEBOUNCE_MS = 400;
+const BASE_URL    = window.location.origin + '/p/';
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let checkTimer     = null;
+let isAvailable    = false;
+let claimedSlug    = null;
+let checkAbort     = null;
+
+// ── DOM refs ───────────────────────────────────────────────────────────────────
+const loader       = document.getElementById('loader');
+const handleInput  = document.getElementById('handleInput');
+const checkSpinner = document.getElementById('checkSpinner');
+const handleStatus = document.getElementById('handleStatus');
+const previewBase  = document.getElementById('previewBase');
+const previewHandle= document.getElementById('previewHandle');
+const claimBtn     = document.getElementById('claimBtn');
+const step1        = document.getElementById('step1');
+const step2        = document.getElementById('step2');
+const liveHandle   = document.getElementById('liveHandleText');
+const buildBtn     = document.getElementById('buildBtn');
+const copyBtn      = document.getElementById('copyBtn');
+
+// ── Init: check auth + existing profile ───────────────────────────────────────
+(async () => {
+  try {
+    const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!meRes.ok) {
+      // Not logged in — redirect to login
+      window.location.replace('/login.html');
+      return;
+    }
+
+    const mineRes = await fetch('/api/handles/mine', { credentials: 'include' });
+    if (mineRes.ok) {
+      const { data } = await mineRes.json();
+      if (data.slug) {
+        // Already has a profile — redirect to editor
+        window.location.replace('/editor.html?slug=' + data.slug);
+        return;
+      }
+    }
+  } catch {
+    // Network error — still show the page, handle will surface on claim attempt
+  }
+
+  // Good to show
+  previewBase.textContent = BASE_URL;
+  loader.style.opacity = '0';
+  setTimeout(() => loader.remove(), 300);
+})();
+
+// ── Handle input ───────────────────────────────────────────────────────────────
+handleInput.addEventListener('input', () => {
+  const raw = handleInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  // Correct the input value to stripped version without moving cursor awkwardly
+  if (handleInput.value !== raw) handleInput.value = raw;
+
+  clearTimeout(checkTimer);
+  clearStatus();
+  claimBtn.disabled = true;
+  isAvailable = false;
+
+  previewHandle.textContent = raw || 'yourname';
+
+  if (!raw) return;
+
+  // Immediate client-side format check to give fast feedback
+  if (raw.length < 3) {
+    return setStatus('invalid', '⚠ Too short — minimum 3 characters');
+  }
+
+  checkTimer = setTimeout(() => runCheck(raw), DEBOUNCE_MS);
+});
+
+// ── Availability check ─────────────────────────────────────────────────────────
+async function runCheck(handle) {
+  if (checkAbort) checkAbort.abort();
+  checkAbort = new AbortController();
+
+  checkSpinner.style.display = 'block';
+  clearStatus();
+  handleInput.className = '';
+
+  try {
+    const res = await fetch(
+      '/api/handles/check?handle=' + encodeURIComponent(handle),
+      { credentials: 'include', signal: checkAbort.signal }
+    );
+
+    checkSpinner.style.display = 'none';
+
+    if (!res.ok) {
+      setStatus('invalid', '⚠ Check failed — try again');
+      return;
+    }
+
+    const { data } = await res.json();
+
+    if (data.available) {
+      setStatus('available', '✓ Available!');
+      handleInput.className = 'valid';
+      isAvailable = true;
+      claimBtn.disabled = false;
+    } else if (data.reason === 'invalid') {
+      setStatus('invalid', '⚠ Invalid format');
+      handleInput.className = 'warning';
+    } else {
+      // 'taken' or 'reserved'
+      setStatus('taken', '✗ Already taken');
+      handleInput.className = 'invalid';
+    }
+  } catch (err) {
+    checkSpinner.style.display = 'none';
+    if (err.name !== 'AbortError') {
+      setStatus('invalid', '⚠ Could not check — try again');
+    }
+  }
+}
+
+function setStatus(type, text) {
+  handleStatus.className = 'handle-status ' + type;
+  handleStatus.textContent = text;
+}
+
+function clearStatus() {
+  handleStatus.className = 'handle-status empty';
+  handleStatus.textContent = '';
+  handleInput.className = '';
+}
+
+// ── Claim ──────────────────────────────────────────────────────────────────────
+claimBtn.addEventListener('click', async () => {
+  if (!isAvailable) return;
+
+  const handle = handleInput.value.trim();
+  claimBtn.disabled = true;
+  claimBtn.textContent = 'Claiming…';
+
+  try {
+    const res = await fetch('/api/handles/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ handle }),
+    });
+
+    const body = await res.json();
+
+    if (!res.ok) {
+      claimBtn.disabled = false;
+      claimBtn.textContent = 'Claim Handle';
+      if (body.code === 'HANDLE_TAKEN') {
+        isAvailable = false;
+        setStatus('taken', '✗ Just taken by someone else — try another');
+        handleInput.className = 'invalid';
+      } else if (body.code === 'PROFILE_EXISTS') {
+        // Edge case: race between tabs
+        window.location.replace('/editor.html?slug=' + handle);
+      } else {
+        setStatus('taken', '✗ ' + (body.error || 'Claim failed — try again'));
+      }
+      return;
+    }
+
+    claimedSlug = body.data.slug;
+    showSuccess(claimedSlug);
+  } catch {
+    claimBtn.disabled = false;
+    claimBtn.textContent = 'Claim Handle';
+    setStatus('taken', '✗ Network error — try again');
+  }
+});
+
+// ── Step 2: Success ────────────────────────────────────────────────────────────
+function showSuccess(slug) {
+  step1.style.display = 'none';
+  step2.style.display = 'block';
+
+  const fullUrl = BASE_URL + slug;
+  liveHandle.textContent = window.location.hostname + '/p/' + slug;
+  buildBtn.href = '/editor.html?slug=' + slug;
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      copyBtn.classList.add('copied');
+      copyBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Copied!
+      `;
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy my link
+        `;
+      }, 2500);
+    } catch {
+      // Fallback for non-HTTPS dev environments
+      prompt('Copy this link:', fullUrl);
+    }
+  });
+}
+</script>
+</body>
+</html>

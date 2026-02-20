@@ -93,7 +93,12 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: 'User not found', code: 'NOT_FOUND' });
     }
-    res.json({ data: rows[0] });
+    res.json({
+      data: {
+        ...rows[0],
+        impersonatedBy: req.impersonatedBy ?? null,
+      },
+    });
   } catch (err) {
     console.error('Me error:', err);
     res.status(500).json({ error: 'Failed to fetch user', code: 'SERVER_ERROR' });

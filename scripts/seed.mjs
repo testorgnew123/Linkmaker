@@ -90,6 +90,44 @@ if (existingProfile.length > 0) {
   console.log(`  Created profile: ${slug}`);
 }
 
+// ── Admin user ───────────────────────────────────────────────────────────────
+// Seeded manually only — there is no API path to become admin.
+// Requires: ADMIN_PASSWORD env var and migration 003 already applied.
+
+const adminPassword = process.env.ADMIN_PASSWORD;
+
+if (!adminPassword) {
+  console.warn('\nWARNING: ADMIN_PASSWORD is not set — skipping admin user seed.');
+  console.warn('  Set ADMIN_PASSWORD in .env and re-run to create the admin account.');
+} else {
+  const adminEmail = 'admin@qrprofile.com';
+  const adminHash  = await bcrypt.hash(adminPassword, 12);
+
+  console.log('\nSeeding admin user...');
+
+  const existingAdmin = await sql`SELECT id FROM users WHERE email = ${adminEmail}`;
+
+  if (existingAdmin.length > 0) {
+    // Update password and ensure role is admin in case it drifted
+    await sql`
+      UPDATE users SET password_hash = ${adminHash}, role = 'admin'
+      WHERE email = ${adminEmail}
+    `;
+    console.log(`  Updated admin user: ${adminEmail}`);
+  } else {
+    await sql`
+      INSERT INTO users (email, password_hash, role)
+      VALUES (${adminEmail}, ${adminHash}, 'admin')
+    `;
+    console.log(`  Created admin user: ${adminEmail}`);
+  }
+
+  console.log(`  Login: ${adminEmail} / [value of ADMIN_PASSWORD]`);
+  console.log('  Admin portal: /admin/');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 console.log('\nSeed complete!');
-console.log(`  Login: ${email} / ${password}`);
+console.log(`  Test login: ${email} / ${password}`);
 console.log(`  Profile: /p/${slug}`);

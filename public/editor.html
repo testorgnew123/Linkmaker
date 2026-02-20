@@ -6,6 +6,26 @@
 <title>QR Profile Platform — Editor</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ===================== IMPERSONATION BANNER ===================== */
+#impersonation-banner {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10000;
+  background: #7f1d1d; border-bottom: 1px solid rgba(255,107,107,0.4);
+  padding: 9px 20px; font-size: 13px; font-weight: 500;
+  color: #fca5a5; font-family: 'Outfit', sans-serif;
+  align-items: center; justify-content: center; gap: 12px;
+}
+#impersonation-banner.active { display: flex; }
+#impersonation-banner strong { color: #fef2f2; font-weight: 700; }
+#impersonation-banner button {
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  color: #fef2f2; border-radius: 6px; padding: 3px 10px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: 'Outfit', sans-serif; transition: background 0.2s;
+}
+#impersonation-banner button:hover { background: rgba(255,255,255,0.25); }
+body.impersonating .app-shell { margin-top: 38px; }
+
 /* ===================== RESET & BASE ===================== */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -311,7 +331,25 @@ body {
   font-family: 'Outfit', sans-serif;
   margin-top: 10px;
 }
-.add-card-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.05); }
+.add-card-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.05); }
+.add-card-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Card counter */
+.card-counter-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.card-counter {
+  font-size: 12px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text3);
+  transition: var(--transition);
+}
+.card-counter.ok   { color: var(--accent3); border-color: rgba(67,233,123,0.25); background: rgba(67,233,123,0.08); }
+.card-counter.warn { color: var(--gold);    border-color: rgba(247,201,72,0.25); background: rgba(247,201,72,0.08); }
+.card-counter.full { color: var(--accent2); border-color: rgba(255,107,107,0.25); background: rgba(255,107,107,0.08); }
 
 /* Card Type Menu */
 .card-type-menu {
@@ -886,6 +924,12 @@ body {
 </head>
 <body>
 
+<!-- Impersonation banner — shown only when an admin is viewing as another user -->
+<div id="impersonation-banner">
+  <span>⚠ You are viewing as <strong id="impersonated-email"></strong></span>
+  <button onclick="exitImpersonation()">Exit Impersonation</button>
+</div>
+
 <div class="app-shell">
 
   <!-- ============================================================ -->
@@ -962,9 +1006,12 @@ body {
       <!-- CARDS TAB -->
       <div id="tab-cards" style="display:none">
         <div class="editor-section">
-          <div class="editor-section-title">Page Cards</div>
+          <div class="card-counter-row">
+            <div class="editor-section-title" style="margin-bottom:0">Page Cards</div>
+            <span class="card-counter" id="cardCounter">0 / 5</span>
+          </div>
           <div class="cards-list" id="cardsEditorList"></div>
-          <button class="add-card-btn" onclick="toggleCardTypeMenu()">
+          <button class="add-card-btn" id="addCardBtn" onclick="toggleCardTypeMenu()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New Card
           </button>
@@ -1109,7 +1156,8 @@ const state = {
     { id: 'linkedin', label: 'LinkedIn', icon: '\ud83d\udcbc', color: '#0A66C2', placeholder: 'profile url', value: '', enabled: false },
     { id: 'youtube', label: 'YouTube', icon: '\u25b6\ufe0f', color: '#FF0000', placeholder: 'channel url', value: '', enabled: false },
   ],
-  cards: []
+  cards: [],
+  cardLimit: 5
 };
 
 // Social href generators (kept separate since they can't be serialized to JSON)
@@ -1159,7 +1207,11 @@ async function api(path, options = {}) {
     ...options,
   });
   const json = await res.json();
-  if (!res.ok) throw new Error(json.error || 'Request failed');
+  if (!res.ok) {
+    const err = new Error(json.error || 'Request failed');
+    err.code = json.code;
+    throw err;
+  }
   return json.data;
 }
 
@@ -1192,6 +1244,8 @@ async function loadProfile(slug) {
       state.cards = data.cards;
       cardIdCounter = Math.max(100, ...state.cards.map(c => c.id || 0)) + 1;
     }
+
+    state.cardLimit = data.card_limit || 5;
 
     // Populate form fields
     document.getElementById('bizSlug').value = state.slug;
@@ -1255,7 +1309,11 @@ async function saveProfile() {
     showToast('Saved successfully', 'success');
   } catch (err) {
     console.error('Save error:', err);
-    showToast('Error saving: ' + err.message, 'error');
+    if (err.code === 'CARD_LIMIT_EXCEEDED') {
+      showToast(`Card limit reached (${state.cardLimit} max)`, 'error');
+    } else {
+      showToast('Error saving: ' + err.message, 'error');
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = 'Save';
@@ -1352,6 +1410,23 @@ function toggleSocial(i) {
 }
 
 // ===================== CARDS EDITOR =====================
+function updateCardCounter() {
+  const count = state.cards.length;
+  const limit = state.cardLimit;
+  const counter = document.getElementById('cardCounter');
+  const addBtn  = document.getElementById('addCardBtn');
+  if (!counter) return;
+
+  counter.textContent = `${count} / ${limit} cards`;
+  counter.className   = 'card-counter ' + (count >= limit ? 'full' : count >= limit - 1 ? 'warn' : 'ok');
+
+  if (addBtn) {
+    const atLimit = count >= limit;
+    addBtn.disabled = atLimit;
+    addBtn.title    = atLimit ? 'Upgrade to add more cards' : '';
+  }
+}
+
 function renderCardsEditor() {
   const list = document.getElementById('cardsEditorList');
   list.innerHTML = state.cards.map((card, i) => {
@@ -1376,6 +1451,7 @@ function renderCardsEditor() {
       </div>
     </div>
   `}).join('');
+  updateCardCounter();
 }
 function getCardBadgeStyle(type) {
   const map = {
@@ -1445,6 +1521,11 @@ function toggleCardTypeMenu() {
   document.getElementById('cardTypeMenu').classList.toggle('open');
 }
 function addCard(type) {
+  if (state.cards.length >= state.cardLimit) {
+    showToast(`Card limit reached (${state.cardLimit} max)`, 'error');
+    document.getElementById('cardTypeMenu').classList.remove('open');
+    return;
+  }
   cardIdCounter++;
   const defaults = {
     link: { title: 'New Link', sub: 'Click to visit', icon: '\ud83d\udd17', url: 'https://', view: 'card' },
@@ -1719,8 +1800,38 @@ function closeEditor() {
   document.getElementById('mobileOverlay').classList.remove('open');
 }
 
+// ===================== IMPERSONATION =====================
+async function exitImpersonation() {
+  try {
+    const res = await fetch('/api/admin/impersonate/exit', {
+      method: 'POST', credentials: 'same-origin',
+    });
+    const body = await res.json();
+    if (res.ok) {
+      window.location.replace('/admin/');
+    } else {
+      showToast(body.error || 'Failed to exit impersonation', 'error');
+    }
+  } catch {
+    showToast('Network error', 'error');
+  }
+}
+
 // ===================== BOOT =====================
-(function boot() {
+(async function boot() {
+  // Check impersonation status before loading profile
+  try {
+    const meRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    if (meRes.ok) {
+      const { data } = await meRes.json();
+      if (data.impersonatedBy) {
+        document.getElementById('impersonated-email').textContent = data.email;
+        document.getElementById('impersonation-banner').classList.add('active');
+        document.body.classList.add('impersonating');
+      }
+    }
+  } catch { /* non-fatal */ }
+
   // Read slug from URL query param: /editor.html?slug=desire-realty
   const params = new URLSearchParams(window.location.search);
   const slug = params.get('slug');
