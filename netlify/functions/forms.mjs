@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 
 // POST /api/forms/contact — send contact form email
-app.post('/api/forms/contact', async (req, res) => {
+app.post(['/api/forms/contact', '/contact'], async (req, res) => {
   try {
     const { profileSlug, recipientEmail, formData } = req.body;
 
@@ -76,7 +76,8 @@ app.post('/api/forms/contact', async (req, res) => {
 });
 
 // POST /api/forms/subscribe — save email capture subscriber
-app.post('/api/forms/subscribe', async (req, res) => {
+app.post(['/api/forms/subscribe', '/subscribe'], async (req, res) => {
+  console.log('Subscribe endpoint called', { body: req.body });
   try {
     const { profileSlug, cardId, email } = req.body;
 
@@ -103,6 +104,8 @@ app.post('/api/forms/subscribe', async (req, res) => {
       ON CONFLICT (profile_slug, card_id, email) DO NOTHING
       RETURNING id
     `;
+
+    console.log('Subscriber insert result:', { newSubscriber: result.length > 0, email, profileSlug });
 
     // Send notification email to profile owner (only for new subscribers)
     if (result.length > 0) {
