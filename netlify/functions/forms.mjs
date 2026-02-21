@@ -105,28 +105,41 @@ app.post('/api/forms/subscribe', async (req, res) => {
     `;
 
     // Send notification email to profile owner (only for new subscribers)
-    if (result.length > 0 && process.env.SMTP_HOST) {
-      try {
-        const ownerRows = await sql`
-          SELECT u.email FROM profiles p JOIN users u ON u.id = p.owner_id
-          WHERE p.slug = ${profileSlug}
-        `;
-        if (ownerRows.length > 0) {
-          const port = parseInt(process.env.SMTP_PORT || '587');
-          const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST, port, secure: port === 465,
-            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS }
-          });
-          await transporter.sendMail({
-            from: process.env.SMTP_USER,
-            to: ownerRows[0].email,
-            subject: `New subscriber on ${profileSlug}`,
-            text: `You have a new email subscriber!\n\nEmail: ${email}\nProfile: ${profileSlug}\nTime: ${new Date().toISOString()}`
-          });
+    if (result.length > 0) {
+      if (!process.env.SMTP_HOST) {
+        console.warn('SMTP_HOST not configured - skipping subscriber notification email');
+      } else {
+        try {
+          const ownerRows = await sql`
+            SELECT u.email FROM profiles p JOIN users u ON u.id = p.owner_id
+            WHERE p.slug = ${profileSlug}
+          `;
+          if (ownerRows.length > 0) {
+            const port = parseInt(process.env.SMTP_PORT || '587');
+            console.log(`Sending subscriber notification to ${ownerRows[0].email} via ${process.env.SMTP_HOST}:${port}`);
+            const transporter = nodemailer.createTransport({
+              host: process.env.SMTP_HOST,
+              port,
+              secure: port === 465,
+              auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS
+              }
+            });
+            await transporter.sendMail({
+              from: process.env.SMTP_USER,
+              to: ownerRows[0].email,
+              subject: `New subscriber on ${profileSlug}`,
+              text: `You have a new email subscriber!\n\nEmail: ${email}\nProfile: ${profileSlug}\nTime: ${new Date().toISOString()}`
+            });
+            console.log('Subscriber notification email sent successfully');
+          } else {
+            console.warn(`No owner found for profile ${profileSlug}`);
+          }
+        } catch (emailErr) {
+          console.error('Subscriber notification email error:', emailErr.message, emailErr.stack);
+          // Don't fail the request if email fails — subscriber is already saved
         }
-      } catch (emailErr) {
-        console.error('Subscriber notification email error:', emailErr);
-        // Don't fail the request if email fails — subscriber is already saved
       }
     }
 
