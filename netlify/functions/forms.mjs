@@ -75,4 +75,66 @@ app.post('/api/forms/contact', async (req, res) => {
   }
 });
 
+// POST /api/forms/subscribe — save email capture subscriber
+app.post('/api/forms/subscribe', async (req, res) => {
+  try {
+    const { profileSlug, cardId, email } = req.body;
+
+    if (!profileSlug || !cardId || !email) {
+      return res.status(400).json({ error: 'Missing required fields', code: 'BAD_REQUEST' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email address', code: 'BAD_REQUEST' });
+    }
+
+    const sql = getDB();
+
+    // Verify the profile exists
+    const profiles = await sql`SELECT slug FROM profiles WHERE slug = ${profileSlug}`;
+    if (profiles.length === 0) {
+      return res.status(404).json({ error: 'Profile not found', code: 'NOT_FOUND' });
+    }
+
+    // Insert subscriber (ignore duplicate)
+    const result = await sql`
+      INSERT INTO email_subscribers (profile_slug, card_id, email)
+      VALUES (${profileSlug}, ${String(cardId)}, ${email})
+      ON CONFLICT (profile_slug, card_id, email) DO NOTHING
+      RETURNING id
+    `;
+
+    // Send notification email to profile owner (only for new subscribers)
+    if (result.length > 0 && process.env.SMTP_HOST) {
+      try {
+        const ownerRows = await sql`
+          SELECT u.email FROM profiles p JOIN users u ON u.id = p.owner_id
+          WHERE p.slug = ${profileSlug}
+        `;
+        if (ownerRows.length > 0) {
+          const port = parseInt(process.env.SMTP_PORT || '587');
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST, port, secure: port === 465,
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS }
+          });
+          await transporter.sendMail({
+            from: process.env.SMTP_USER,
+            to: ownerRows[0].email,
+            subject: `New subscriber on ${profileSlug}`,
+            text: `You have a new email subscriber!\n\nEmail: ${email}\nProfile: ${profileSlug}\nTime: ${new Date().toISOString()}`
+          });
+        }
+      } catch (emailErr) {
+        console.error('Subscriber notification email error:', emailErr);
+        // Don't fail the request if email fails — subscriber is already saved
+      }
+    }
+
+    res.json({ data: { subscribed: true } });
+  } catch (err) {
+    console.error('Email subscribe error:', err);
+    res.status(500).json({ error: 'Failed to subscribe', code: 'SERVER_ERROR' });
+  }
+});
+
 export const handler = serverless(app);

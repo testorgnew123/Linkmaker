@@ -2345,17 +2345,38 @@ async function submitEmailCapture(e, cardId) {
   if (!card) return;
   const email = e.target.querySelector('input[type="email"]').value;
   const msgEl = document.getElementById('email-msg-' + cardId);
-  if (card.webhookUrl) {
-    try {
-      await fetch(card.webhookUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, slug: state.slug, timestamp: new Date().toISOString() })
-      });
-    } catch { /* webhook fire-and-forget */ }
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    const res = await fetch('/api/forms/subscribe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileSlug: state.slug, cardId: String(cardId), email })
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      msgEl.style.color = '#ef4444';
+      msgEl.textContent = d.error || 'Something went wrong, please try again.';
+      return;
+    }
+    if (card.webhookUrl) {
+      try {
+        await fetch(card.webhookUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, slug: state.slug, timestamp: new Date().toISOString() })
+        });
+      } catch { /* webhook fire-and-forget */ }
+    }
+    msgEl.style.color = 'var(--accent3)';
+    msgEl.textContent = card.successMessage || 'Thanks!';
+    e.target.reset();
+  } catch {
+    msgEl.style.color = '#ef4444';
+    msgEl.textContent = 'Something went wrong, please try again.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = card.buttonText || 'Subscribe';
   }
-  msgEl.style.color = 'var(--accent3)';
-  msgEl.textContent = card.successMessage || 'Thanks!';
-  e.target.reset();
 }
 
 function renderPollCard(card) {
