@@ -43,3 +43,22 @@ Role is double-checked from DB on every admin request, not just JWT.
 Always insert to audit_log after any admin action:
 await sql`INSERT INTO audit_log (admin_id, action, target_id, metadata)
           VALUES (${adminId}, ${action}, ${targetId}, ${JSON.stringify(meta)})`
+
+
+## Card System
+Cards are stored as JSONB array in profiles.cards.
+Each card: { id, type, title, ...typeSpecificFields }
+Card types: link, map, website, whatsapp, google, cta, text, video,
+            image, image_grid, audio, pdf, countdown, rss_feed,
+            contact_form, email_capture, poll, faq, testimonial,
+            product, booking, tip_jar, instagram_post, tweet,
+            tiktok_post, spotify
+Never add columns for individual card types — always JSONB.
+
+## Theme System
+Themes: 25 total. One special light theme: arctic (invert text colors).
+Check state.theme === 'arctic' to apply light mode overrides.
+
+## Interactive Cards Backend
+poll_votes table handles poll state server-side.
+Contact forms: nodemailer via SMTP — validate recipient is profile owner.
