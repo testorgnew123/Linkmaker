@@ -114,7 +114,7 @@ app.post(['/api/forms/subscribe', '/subscribe'], async (req, res) => {
       } else {
         try {
           const ownerRows = await sql`
-            SELECT u.email FROM profiles p JOIN users u ON u.id = p.owner_id
+            SELECT u.email, p.business_name FROM profiles p JOIN users u ON u.id = p.owner_id
             WHERE p.slug = ${profileSlug}
           `;
           if (ownerRows.length > 0) {
@@ -129,6 +129,8 @@ app.post(['/api/forms/subscribe', '/subscribe'], async (req, res) => {
                 pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS
               }
             });
+            
+            // Send notification to profile owner
             await transporter.sendMail({
               from: process.env.SMTP_USER,
               to: ownerRows[0].email,
@@ -136,6 +138,16 @@ app.post(['/api/forms/subscribe', '/subscribe'], async (req, res) => {
               text: `You have a new email subscriber!\n\nEmail: ${email}\nProfile: ${profileSlug}\nTime: ${new Date().toISOString()}`
             });
             console.log('Subscriber notification email sent successfully');
+
+            // Send thank you email to subscriber
+            const businessName = ownerRows[0].business_name || profileSlug;
+            await transporter.sendMail({
+              from: process.env.SMTP_USER,
+              to: email,
+              subject: `Thanks for subscribing to ${businessName}!`,
+              text: `Hi there!\n\nThank you for subscribing to ${businessName}. We're excited to have you on board!\n\nYou'll receive updates and news directly to your inbox.\n\nBest regards,\n${businessName}`
+            });
+            console.log('Thank you email sent to subscriber');
           } else {
             console.warn(`No owner found for profile ${profileSlug}`);
           }
