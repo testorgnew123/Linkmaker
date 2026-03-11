@@ -4,6 +4,8 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["bcryptjs", "multer", "nodemailer", "cloudinary", "qrcode"]
+  included_files = ["lib/**"]
 
 [[redirects]]
   from = "/api/*"
