@@ -32,4 +32,6 @@ app.get('/api/profiles/:slug/qr', async (req, res) => {
   }
 });
 
-export const handler = serverless(app);
+export const handler = serverless(app, {
+  binary: ['image/*'],
+});

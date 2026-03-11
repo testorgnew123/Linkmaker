@@ -146,6 +146,41 @@ body {
 }
 .view-live-btn:hover { background: var(--surface3); border-color: var(--accent); color: var(--white); }
 
+/* QR Tab Styles */
+.qr-tab-container { text-align: center; padding: 20px 0; }
+.qr-preview-wrapper {
+  background: var(--white); border-radius: var(--radius);
+  padding: 24px; display: inline-block; margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.qr-preview-wrapper img { display: block; width: 220px; height: 220px; }
+.qr-profile-url {
+  font-size: 12px; color: var(--text2); margin-bottom: 20px;
+  word-break: break-all; padding: 0 10px;
+}
+.qr-actions { display: flex; flex-direction: column; gap: 10px; }
+.qr-download-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'Outfit', sans-serif; transition: var(--transition);
+  border: none;
+}
+.qr-download-btn.primary {
+  background: var(--accent); color: white;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.4);
+}
+.qr-download-btn.primary:hover { background: #7c74ff; transform: translateY(-1px); }
+.qr-download-btn.secondary {
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border2);
+}
+.qr-download-btn.secondary:hover { background: var(--surface3); border-color: var(--accent); color: var(--white); }
+.qr-download-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.qr-placeholder {
+  color: var(--text3); font-size: 13px; padding: 40px 0;
+}
+
 /* Editor Tabs */
 .editor-tabs {
   display: flex; gap: 4px;
@@ -987,6 +1022,7 @@ body {
         <button class="editor-tab" onclick="switchTab('socials', this)">Socials</button>
         <button class="editor-tab" onclick="switchTab('cards', this)">Cards</button>
         <button class="editor-tab" onclick="switchTab('theme', this)">Theme</button>
+        <button class="editor-tab" onclick="switchTab('qr', this)">QR Code</button>
       </div>
     </div>
 
@@ -1180,6 +1216,16 @@ body {
           <div class="field" id="emojiField" style="display:none">
             <label>Emoji</label>
             <input type="text" id="bizEmoji" value="" oninput="updateProfile()">
+          </div>
+        </div>
+      </div>
+
+      <!-- QR CODE TAB -->
+      <div id="tab-qr" style="display:none">
+        <div class="editor-section">
+          <div class="editor-section-title">Your QR Code</div>
+          <div class="qr-tab-container" id="qrTabContent">
+            <div class="qr-placeholder">Save your profile to generate a QR code.</div>
           </div>
         </div>
       </div>
@@ -1493,9 +1539,10 @@ function updateLogoPreview() {
 function switchTab(tab, btn) {
   document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  ['profile', 'socials', 'cards', 'theme'].forEach(t => {
+  ['profile', 'socials', 'cards', 'theme', 'qr'].forEach(t => {
     document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
   });
+  if (tab === 'qr') renderQrTab();
 }
 
 // ===================== THEME =====================
@@ -1514,6 +1561,66 @@ function setTheme(id) {
   const screen = document.getElementById('phoneScreen');
   screen.className = `phone-screen theme-${id}`;
   renderThemeGrid();
+}
+
+// ===================== QR CODE TAB =====================
+function renderQrTab() {
+  const container = document.getElementById('qrTabContent');
+  if (!state.slug) {
+    container.innerHTML = '<div class="qr-placeholder">Save your profile to generate a QR code.</div>';
+    return;
+  }
+
+  const qrApiUrl = `/api/profiles/${state.slug}/qr`;
+  const profileUrl = `${window.location.origin}/p/${state.slug}`;
+
+  container.innerHTML = `
+    <div class="qr-preview-wrapper">
+      <img id="qrImage" src="${qrApiUrl}" alt="QR Code for ${state.slug}"
+           onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<div style=\\'padding:30px;color:#888;font-size:13px\\'>Failed to load QR code. Please save your profile and try again.</div>')">
+    </div>
+    <div class="qr-profile-url">${profileUrl}</div>
+    <div class="qr-actions">
+      <button class="qr-download-btn primary" onclick="downloadQr('png')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PNG
+      </button>
+      <button class="qr-download-btn secondary" onclick="copyProfileUrl()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy Profile Link
+      </button>
+    </div>
+  `;
+}
+
+async function downloadQr(format) {
+  if (!state.slug) return;
+  try {
+    const resp = await fetch(`/api/profiles/${state.slug}/qr`);
+    if (!resp.ok) throw new Error('Failed to fetch QR');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${state.slug}-qr.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('QR code downloaded', 'success');
+  } catch (err) {
+    console.error('QR download error:', err);
+    showToast('Failed to download QR code', 'error');
+  }
+}
+
+function copyProfileUrl() {
+  const url = `${window.location.origin}/p/${state.slug}`;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('Profile link copied!', 'success');
+  }).catch(() => {
+    showToast('Failed to copy link', 'error');
+  });
 }
 
 // ===================== SOCIALS EDITOR =====================

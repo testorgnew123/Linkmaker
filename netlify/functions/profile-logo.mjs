@@ -56,4 +56,6 @@ app.post('/api/profiles/:slug/logo', requireAuth, upload.single('logo'), async (
   }
 });
 
-export const handler = serverless(app);
+export const handler = serverless(app, {
+  binary: ['image/*', 'multipart/form-data'],
+});
