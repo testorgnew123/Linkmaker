@@ -1,3 +1,8 @@
+[dev]
+  framework = "#static"
+  publish = "public"
+  autoLaunch = false
+
 [build]
   publish = "public"
   functions = "netlify/functions"
